@@ -1,5 +1,6 @@
 package com.github.danilodequeiroz.pinterestdl
 
+import com.github.danilodequeiroz.pinterestdl.presentation.server.configureRouting
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.*
 import io.ktor.server.cio.*
