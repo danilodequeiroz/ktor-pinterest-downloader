@@ -4,10 +4,11 @@ import com.github.danilodequeiroz.pinterestdl.LogToObservabilityImpl
 import com.github.danilodequeiroz.pinterestdl.data.parser.EMPTY_STRING
 import com.github.danilodequeiroz.pinterestdl.data.parser.PinterestHtmlParserImpl
 import com.github.danilodequeiroz.pinterestdl.data.repository.PinterestHttpScrapingRepositoryImp
-import com.github.danilodequeiroz.pinterestdl.data.repository.RepositoryResult
 import com.github.danilodequeiroz.pinterestdl.data.repository.source.remote.PinterestKtorHttpClientDataSourceImpl
 import com.github.danilodequeiroz.pinterestdl.presentation.dto.PinterestControllerImpl
 import com.github.danilodequeiroz.pinterestdl.domain.PinterestMedia
+import com.github.danilodequeiroz.pinterestdl.domain.usecase.FetchPinterestWebPageUseCase
+import com.github.danilodequeiroz.pinterestdl.domain.usecase.FetchPinterestWebPageUseCaseImpl
 import com.github.danilodequeiroz.pinterestdl.presentation.validation.PinterestUrlValidatorImpl
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
@@ -43,11 +44,11 @@ fun Application.configureRouting() {
                 return@get
             }
 
-            val pinterstScraper = PinterestControllerImpl(
+            val pinterestControllerImpl = PinterestControllerImpl(
                 httpClient = httpClient,
                 url = pinterestUrl,
             )
-            val mediaLink = pinterstScraper.getMediaLink()
+            val mediaLink = pinterestControllerImpl.getMediaLink()
 
             if (mediaLink.success) {
                 call.respond(HttpStatusCode.OK, mediaLink)
@@ -55,6 +56,7 @@ fun Application.configureRouting() {
                 call.respond(HttpStatusCode.BadRequest, mediaLink)
             }
         }
+
         get("/download") {
             val pinterestUrl = call.request.queryParameters["url"] ?: EMPTY_STRING
             val logToObservability = LogToObservabilityImpl()
@@ -72,12 +74,15 @@ fun Application.configureRouting() {
                 logToObservability = logToObservability
             )
 
-            val pinterestMedia = pinterestHttpScrapingRepositoryImp.getPinterestMedia(
+
+            val useCase : FetchPinterestWebPageUseCase = FetchPinterestWebPageUseCaseImpl(
+                pinterestHttpScrapingRepository = pinterestHttpScrapingRepositoryImp,
+            )
+            val pinterestMedia = useCase.execute(
                 url = pinterestUrl
             )
             when(pinterestMedia){
-                is RepositoryResult.Success -> call.respond(HttpStatusCode.OK, pinterestMedia.data)
-                is RepositoryResult.Failure -> call.respond(HttpStatusCode.OK, PinterestMedia(message = "${pinterestMedia.genericMsg}  :  ${pinterestMedia.repositoryError}" , success = false, type = EMPTY_STRING, link = EMPTY_STRING))
+                is PinterestMedia -> call.respond(HttpStatusCode.OK, pinterestMedia)
             }
         }
     }

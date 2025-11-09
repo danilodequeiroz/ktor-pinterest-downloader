@@ -11,7 +11,7 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.isSuccess
 
 const val USER_AGENT_NAME = "User-Agent"
-const val USER_AGENT_VALUE = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, como Gecko) Chrome/58.0.3029.110 Safari/537.3"
+const val USER_AGENT_VALUE = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
 
 class PinterestHttpScrapingRepositoryImp(
     val pinterestUrlValidator: PinterestUrlValidator,

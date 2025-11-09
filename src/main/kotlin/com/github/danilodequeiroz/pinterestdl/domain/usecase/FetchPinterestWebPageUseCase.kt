@@ -2,7 +2,7 @@ package com.github.danilodequeiroz.pinterestdl.domain.usecase
 
 import com.github.danilodequeiroz.pinterestdl.domain.PinterestMedia
 
-interface FetchHtmlPageUseCase {
+interface FetchPinterestWebPageUseCase {
 
-    fun execute(url :String): PinterestMedia
+    suspend fun execute(url :String): PinterestMedia
 }
