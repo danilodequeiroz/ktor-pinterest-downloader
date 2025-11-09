@@ -13,11 +13,9 @@ import io.ktor.client.request.get
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headers
-import kotlinx.coroutines.CoroutineScope
 
 class PinterestKtorHttpClientDataSourceImpl(
     val httpClient: HttpClient,
-    val coroutineScope: CoroutineScope
 ) : PinterestKtorHttpClientDataSource {
     override suspend fun regularGet(cleanUrl : String): HttpResponse {
         try {

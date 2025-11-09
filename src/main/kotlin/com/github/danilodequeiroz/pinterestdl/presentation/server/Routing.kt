@@ -1,5 +1,6 @@
 package com.github.danilodequeiroz.pinterestdl.presentation.server
 
+import com.github.danilodequeiroz.pinterestdl.LogToObservability
 import com.github.danilodequeiroz.pinterestdl.LogToObservabilityImpl
 import com.github.danilodequeiroz.pinterestdl.data.parser.EMPTY_STRING
 import com.github.danilodequeiroz.pinterestdl.data.parser.PinterestHtmlParserImpl
@@ -7,6 +8,7 @@ import com.github.danilodequeiroz.pinterestdl.data.repository.PinterestHttpScrap
 import com.github.danilodequeiroz.pinterestdl.data.repository.source.remote.PinterestKtorHttpClientDataSourceImpl
 import com.github.danilodequeiroz.pinterestdl.presentation.dto.PinterestControllerImpl
 import com.github.danilodequeiroz.pinterestdl.domain.PinterestMedia
+import com.github.danilodequeiroz.pinterestdl.domain.repository.PinterestHttpScrapingRepository
 import com.github.danilodequeiroz.pinterestdl.domain.usecase.FetchPinterestWebPageUseCase
 import com.github.danilodequeiroz.pinterestdl.domain.usecase.FetchPinterestWebPageUseCaseImpl
 import com.github.danilodequeiroz.pinterestdl.presentation.validation.PinterestUrlValidatorImpl
@@ -24,6 +26,38 @@ val httpClient = HttpClient(CIO) {
     engine {
         requestTimeout = 10_000
     }
+}
+
+private fun createLogToObservability(): LogToObservability {
+    return LogToObservabilityImpl()
+}
+
+private fun createCoroutineScope(): CoroutineScope {
+    return CoroutineScope(Dispatchers.Main + Job())
+}
+
+private fun createPinterestHttpScrapingRepository(
+    logToObservability: LogToObservability,
+): PinterestHttpScrapingRepository {
+    val pinterestHtmlParser = PinterestHtmlParserImpl(logToObservability = logToObservability)
+    val ktorHttpClient = PinterestKtorHttpClientDataSourceImpl(
+        httpClient = httpClient,
+    )
+
+    return PinterestHttpScrapingRepositoryImp(
+        pinterestUrlValidator = PinterestUrlValidatorImpl(),
+        ktorHttpClient = ktorHttpClient,
+        pinterestHtmlParser = pinterestHtmlParser,
+        logToObservability = logToObservability
+    )
+}
+
+private fun createFetchPinterestWebPageUseCase(
+    pinterestHttpScrapingRepository: PinterestHttpScrapingRepository
+): FetchPinterestWebPageUseCase {
+    return FetchPinterestWebPageUseCaseImpl(
+        pinterestHttpScrapingRepository = pinterestHttpScrapingRepository
+    )
 }
 
 fun Application.configureRouting() {
@@ -59,29 +93,16 @@ fun Application.configureRouting() {
 
         get("/download") {
             val pinterestUrl = call.request.queryParameters["url"] ?: EMPTY_STRING
-            val logToObservability = LogToObservabilityImpl()
-
-            val coroutineScope = CoroutineScope(Dispatchers.Main + Job())
-            val pinterestHtmlParser = PinterestHtmlParserImpl(logToObservability = logToObservability)
-            val ktorHttpClient1 = PinterestKtorHttpClientDataSourceImpl(
-                httpClient = httpClient,
-                coroutineScope = coroutineScope,
-            )
-            val pinterestHttpScrapingRepositoryImp = PinterestHttpScrapingRepositoryImp(
-                pinterestUrlValidator = PinterestUrlValidatorImpl(),
-                ktorHttpClient = ktorHttpClient1,
-                pinterestHtmlParser = pinterestHtmlParser,
-                logToObservability = logToObservability
+            val logToObservability = createLogToObservability()
+            val pinterestHttpScrapingRepository = createPinterestHttpScrapingRepository(
+                logToObservability = logToObservability,
             )
 
+            val useCase: FetchPinterestWebPageUseCase = createFetchPinterestWebPageUseCase(
+                pinterestHttpScrapingRepository = pinterestHttpScrapingRepository
+            )
 
-            val useCase : FetchPinterestWebPageUseCase = FetchPinterestWebPageUseCaseImpl(
-                pinterestHttpScrapingRepository = pinterestHttpScrapingRepositoryImp,
-            )
-            val pinterestMedia = useCase.execute(
-                url = pinterestUrl
-            )
-            when(pinterestMedia){
+            when (val pinterestMedia = useCase.execute(url = pinterestUrl)) {
                 is PinterestMedia -> call.respond(HttpStatusCode.OK, pinterestMedia)
             }
         }
