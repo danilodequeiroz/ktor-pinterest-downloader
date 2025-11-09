@@ -12,19 +12,19 @@ import java.util.regex.Pattern
 class PinterestControllerImpl(
     private val httpClient: HttpClient,
     private val url: String
-) : Pinterest{
+) : Pinterest {
 
-    /** Verifica se a URL fornecida é um formato válido de pin do Pinterest. */
+    /** Checks if the provided URL is a valid Pinterest pin format. */
     fun isValidUrl(): Boolean {
         val pattern = Pattern.compile("(^http(s)?://)?(www.)?pinterest.\\w+/pin/[\\w\\-?]+")
         return pattern.matcher(url).matches()
     }
 
-    /** Faz a requisição HTTP e retorna o conteúdo HTML. */
+    /** Makes an HTTP request and returns the HTML content. */
     suspend fun getPageContent(): String? {
         return try {
             val response = httpClient.get(url) {
-                // Configura headers, se necessário (ex: User-Agent)
+                // Additional headers (ie: User-Agent)
             }
             response.bodyAsText().takeIf { response.status.isSuccess() }
         } catch (e: Exception) {
@@ -33,14 +33,14 @@ class PinterestControllerImpl(
         }
     }
 
-    /** Verifica se o pin é um vídeo com base no conteúdo HTML. */
+    /** Checks if the pin is a video based on the HTML content. */
     fun isVideo(content: String): Boolean {
         return content.contains("video-snippet")
     }
 
     /**
-     * Raspa o conteúdo da página para o link direto de imagem ou vídeo.
-     * Retorna um objeto com.github.danilodequeiroz.pinterestdl.domain.MediaLink.
+     * Scrapes the page content for the direct image or video link.
+     * Returns an object of com.github.danilodequeiroz.pinterestdl.domain.MediaLink.
      */
     suspend fun getMediaLink(): PinterestMedia {
         if (!isValidUrl()) {
@@ -54,7 +54,7 @@ class PinterestControllerImpl(
 
         return try {
             if (isVideo(content)) {
-                // Regex para buscar o bloco JSON-LD do vídeo
+                // Regex to find the JSON-LD block for the video
                 val match = Regex("<script data-test-id=\"video-snippet\".+?</script>")
                     .find(content)?.value
 

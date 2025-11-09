@@ -19,6 +19,10 @@ import com.github.danilodequeiroz.pinterestdl.presentation.dto.PinterestControll
 import com.github.danilodequeiroz.pinterestdl.presentation.validation.PinterestUrlValidatorImpl
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
+import io.ktor.client.plugins.logging.DEFAULT
+import io.ktor.client.plugins.logging.LogLevel
+import io.ktor.client.plugins.logging.Logger
+import io.ktor.client.plugins.logging.Logging
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.plugins.statuspages.*
@@ -28,6 +32,19 @@ import io.ktor.server.routing.*
 val httpClient = HttpClient(CIO) {
     engine {
         requestTimeout = 10_000
+    }
+    install(Logging) {
+        level = LogLevel.ALL
+
+        logger = Logger.DEFAULT
+
+        filter { request ->
+            !request.url.encodedPath.contains("/health")
+        }
+
+        sanitizeHeader { header ->
+            header == "Authorization"
+        }
     }
 }
 

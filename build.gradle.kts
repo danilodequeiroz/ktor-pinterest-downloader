@@ -20,14 +20,16 @@ dependencies {
     /** coroutines server engine **/
     implementation(libs.ktor.server.cio)
     implementation(libs.ktor.server.content.negotiation)
+    /** status page for json errors **/
+    implementation(libs.ktor.server.status.pages)
     /** client content negotiation **/
     implementation(libs.ktor.client.cio)
     implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.content.negotiation)
+    implementation(libs.ktor.client.logging)
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.jdk8)
     implementation(libs.ktor.serialization.kotlinx.json)
-    implementation(libs.ktor.client.content.negotiation)
-    implementation(libs.ktor.server.status.pages)
 
     testImplementation(libs.ktor.server.test.host)
     testImplementation(libs.kotlin.test.junit)
