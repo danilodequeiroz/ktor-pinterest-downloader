@@ -17,7 +17,7 @@ import io.ktor.http.headers
 class PinterestKtorHttpClientDataSourceImpl(
     val httpClient: HttpClient,
 ) : PinterestKtorHttpClientDataSource {
-    override suspend fun regularGet(cleanUrl : String): HttpResponse {
+    override suspend fun getRawContent(cleanUrl: String): HttpResponse {
         try {
             val response = httpClient.get(urlString = cleanUrl) {
                 headers {

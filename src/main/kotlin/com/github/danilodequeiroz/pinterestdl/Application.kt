@@ -1,6 +1,7 @@
 package com.github.danilodequeiroz.pinterestdl
 
 import com.github.danilodequeiroz.pinterestdl.presentation.server.configureRouting
+import com.github.danilodequeiroz.pinterestdl.presentation.server.configureStatusPages
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.*
 import io.ktor.server.cio.*
@@ -15,4 +16,5 @@ fun Application.module() {
         json()
     }
     configureRouting()
+    configureStatusPages()
 }

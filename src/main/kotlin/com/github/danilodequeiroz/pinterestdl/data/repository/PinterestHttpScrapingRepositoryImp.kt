@@ -14,25 +14,15 @@ const val USER_AGENT_NAME = "User-Agent"
 const val USER_AGENT_VALUE = "Mozillla/5.0 (Windows NT 10.0; Win64; x64)"
 
 class PinterestHttpScrapingRepositoryImp(
-    val pinterestUrlValidator: PinterestUrlValidator,
     val ktorHttpClient : PinterestKtorHttpClientDataSource,
     val pinterestHtmlParser: PinterestHtmlParser,
     val logToObservability: LogToObservability,
 ) : PinterestHttpScrapingRepository {
     override suspend fun getPinterestMedia(url: String): RepositoryResult<PinterestMedia> {
         var message :String? = null
-        if (!pinterestUrlValidator.isValidUrl(url = url)) {
-            message = "Invalid Pinterest URL format."
-            logToObservability.logWarning(
-                value = message
-            )
-            return RepositoryResult.Failure(
-                genericMsg = message,
-                repositoryError = RepositoryError.UserUrlError
-            )
-        }
+
         val rawHtml = try {
-            val response = ktorHttpClient.regularGet(
+            val response = ktorHttpClient.getRawContent(
                 cleanUrl = url
             )
             response.bodyAsText().takeIf { response.status.isSuccess() } ?: run {

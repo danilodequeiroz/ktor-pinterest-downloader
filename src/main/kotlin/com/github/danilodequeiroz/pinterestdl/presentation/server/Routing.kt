@@ -7,14 +7,11 @@ import com.github.danilodequeiroz.pinterestdl.data.parser.PinterestHtmlParserImp
 import com.github.danilodequeiroz.pinterestdl.data.repository.PinterestHttpScrapingRepositoryImp
 import com.github.danilodequeiroz.pinterestdl.data.repository.source.remote.PinterestKtorHttpClientDataSourceImpl
 import com.github.danilodequeiroz.pinterestdl.domain.PinterestMedia
-import com.github.danilodequeiroz.pinterestdl.domain.exception.BusinessRuleException
-import com.github.danilodequeiroz.pinterestdl.domain.exception.ExternalServiceUnreachableException
-import com.github.danilodequeiroz.pinterestdl.domain.exception.InvalidMediaContentException
-import com.github.danilodequeiroz.pinterestdl.domain.exception.MediaLinkNotFoundException
 import com.github.danilodequeiroz.pinterestdl.domain.repository.PinterestHttpScrapingRepository
 import com.github.danilodequeiroz.pinterestdl.domain.usecase.FetchPinterestWebPageUseCase
 import com.github.danilodequeiroz.pinterestdl.domain.usecase.FetchPinterestWebPageUseCaseImpl
 import com.github.danilodequeiroz.pinterestdl.presentation.dto.ErrorResponse
+import com.github.danilodequeiroz.pinterestdl.presentation.validation.PinterestUrlValidator
 import com.github.danilodequeiroz.pinterestdl.presentation.validation.PinterestUrlValidatorImpl
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
@@ -24,8 +21,7 @@ import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.http.*
 import io.ktor.server.application.*
-import io.ktor.server.plugins.statuspages.*
-import io.ktor.server.response.*
+import io.ktor.server.response.respond
 import io.ktor.server.routing.*
 
 val httpClient = HttpClient(CIO) {
@@ -51,6 +47,9 @@ private fun createLogToObservability(): LogToObservability {
     return LogToObservabilityImpl()
 }
 
+private fun createValidator(): PinterestUrlValidator {
+    return PinterestUrlValidatorImpl()
+}
 
 private fun createPinterestHttpScrapingRepository(
     logToObservability: LogToObservability,
@@ -61,7 +60,6 @@ private fun createPinterestHttpScrapingRepository(
     )
 
     return PinterestHttpScrapingRepositoryImp(
-        pinterestUrlValidator = PinterestUrlValidatorImpl(),
         ktorHttpClient = ktorHttpClient,
         pinterestHtmlParser = pinterestHtmlParser,
         logToObservability = logToObservability
@@ -77,49 +75,6 @@ private fun createFetchPinterestWebPageUseCase(
 }
 
 fun Application.configureRouting() {
-    install(StatusPages) {
-        exception<MediaLinkNotFoundException> { call, cause ->
-            val response = ErrorResponse(
-                status = HttpStatusCode.NotFound.value,
-                message = cause.message ?: "The requested media resource does not exist."
-            )
-            call.respond(HttpStatusCode.NotFound, response)
-        }
-
-        exception<InvalidMediaContentException> { call, cause ->
-            val response = ErrorResponse(
-                status = HttpStatusCode.BadRequest.value,
-                message = cause.message ?: "The content structure is invalid for scraping."
-            )
-            call.respond(HttpStatusCode.BadRequest, response)
-        }
-
-        exception<BusinessRuleException> { call, cause ->
-            val response = ErrorResponse(
-                status = HttpStatusCode.Forbidden.value,
-                message = cause.message ?: "Access to perform this action is forbidden."
-            )
-            call.respond(HttpStatusCode.Forbidden, response)
-        }
-
-        exception<ExternalServiceUnreachableException> { call, cause ->
-            val response = ErrorResponse(
-                status = HttpStatusCode.ServiceUnavailable.value,
-                message = "The external service is currently unreachable. Please try again later. ccase: $cause"
-            )
-            call.respond(HttpStatusCode.ServiceUnavailable, response)
-        }
-
-        exception<Throwable> { call, cause ->
-            call.application.environment.log.error("Unhandled Exception:", cause)
-
-            val response = ErrorResponse(
-                status = HttpStatusCode.InternalServerError.value,
-                message = "An internal server error occurred."
-            )
-            call.respond(HttpStatusCode.InternalServerError, response)
-        }
-    }
     routing {
         get("/download") {
             val pinterestUrl = call.request.queryParameters["url"] ?: EMPTY_STRING
@@ -131,6 +86,25 @@ fun Application.configureRouting() {
             val useCase: FetchPinterestWebPageUseCase = createFetchPinterestWebPageUseCase(
                 pinterestHttpScrapingRepository = pinterestHttpScrapingRepository
             )
+
+            val pinterestUrlValidator = createValidator()
+
+            if (pinterestUrl == EMPTY_STRING) {
+                call.respond(
+                    HttpStatusCode.BadRequest,
+                    ErrorResponse(HttpStatusCode.BadRequest.value, "URL query parameter is missing.")
+                )
+                return@get
+            }
+
+            if (!pinterestUrlValidator.isValidUrl(pinterestUrl)) {
+                val errorResponse = ErrorResponse(
+                    status = HttpStatusCode.BadRequest.value,
+                    message = "Invalid Pinterest URL format."
+                )
+                call.respond(HttpStatusCode.BadRequest, errorResponse)
+                return@get
+            }
 
             when (val pinterestMedia = useCase.execute(url = pinterestUrl)) {
                 is PinterestMedia -> call.respond(HttpStatusCode.OK, pinterestMedia)
