@@ -15,7 +15,6 @@ import com.github.danilodequeiroz.pinterestdl.domain.repository.PinterestHttpScr
 import com.github.danilodequeiroz.pinterestdl.domain.usecase.FetchPinterestWebPageUseCase
 import com.github.danilodequeiroz.pinterestdl.domain.usecase.FetchPinterestWebPageUseCaseImpl
 import com.github.danilodequeiroz.pinterestdl.presentation.dto.ErrorResponse
-import com.github.danilodequeiroz.pinterestdl.presentation.dto.PinterestControllerImpl
 import com.github.danilodequeiroz.pinterestdl.presentation.validation.PinterestUrlValidatorImpl
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
@@ -122,34 +121,6 @@ fun Application.configureRouting() {
         }
     }
     routing {
-        get("/") {
-            call.respondText("Hello World!")
-        }
-
-        get("/olddownload") {
-            val pinterestUrl = call.request.queryParameters["url"]
-
-            if (pinterestUrl.isNullOrEmpty()) {
-                call.respond(
-                    HttpStatusCode.BadRequest,
-                    PinterestMedia("", "", false, "URL query parameter is missing or empty.")
-                )
-                return@get
-            }
-
-            val pinterestControllerImpl = PinterestControllerImpl(
-                httpClient = httpClient,
-                url = pinterestUrl,
-            )
-            val mediaLink = pinterestControllerImpl.getMediaLink()
-
-            if (mediaLink.success) {
-                call.respond(HttpStatusCode.OK, mediaLink)
-            } else {
-                call.respond(HttpStatusCode.BadRequest, mediaLink)
-            }
-        }
-
         get("/download") {
             val pinterestUrl = call.request.queryParameters["url"] ?: EMPTY_STRING
             val logToObservability = createLogToObservability()
