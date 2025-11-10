@@ -1,7 +1,7 @@
 package com.github.danilodequeiroz.pinterestdl.domain.usecase
 
-import com.github.danilodequeiroz.pinterestdl.data.repository.RepositoryError
-import com.github.danilodequeiroz.pinterestdl.data.repository.RepositoryResult
+import com.github.danilodequeiroz.pinterestdl.domain.result.RepositoryError
+import com.github.danilodequeiroz.pinterestdl.domain.result.RepositoryResult
 import com.github.danilodequeiroz.pinterestdl.domain.PinterestMedia
 import com.github.danilodequeiroz.pinterestdl.domain.exception.ExternalServiceUnreachableException
 import com.github.danilodequeiroz.pinterestdl.domain.exception.GenericDomainException

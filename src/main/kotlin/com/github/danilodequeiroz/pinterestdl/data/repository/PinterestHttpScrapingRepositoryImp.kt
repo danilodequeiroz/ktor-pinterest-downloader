@@ -6,7 +6,8 @@ import com.github.danilodequeiroz.pinterestdl.domain.PinterestMedia
 import com.github.danilodequeiroz.pinterestdl.domain.repository.PinterestHttpScrapingRepository
 import com.github.danilodequeiroz.pinterestdl.data.parser.HtmlParseValidationResult
 import com.github.danilodequeiroz.pinterestdl.data.repository.source.remote.PinterestKtorHttpClientDataSource
-import com.github.danilodequeiroz.pinterestdl.presentation.validation.PinterestUrlValidator
+import com.github.danilodequeiroz.pinterestdl.domain.result.RepositoryError
+import com.github.danilodequeiroz.pinterestdl.domain.result.RepositoryResult
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.isSuccess
 
